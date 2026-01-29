@@ -37,7 +37,9 @@ const insults = [
 ];
 const protectedUsers = [
     '2349133100238@s.whatsapp.net', 
-    '2348100996979@s.whatsapp.net'  
+    '2348100996979@s.whatsapp.net',
+    '151750220726427@s.whatsapp.net',
+    '118769452077294@s.whatsapp.net'
 ];
 async function insultCommand(sock, chatId, message) {
     try {
@@ -67,7 +69,11 @@ async function insultCommand(sock, chatId, message) {
 
         const insult = insults[Math.floor(Math.random() * insults.length)];
         // protected
-    const isProtected = protectedUsers.some(id => userToInsult.split('@')[0] === id.split('@')[0]);
+    const isProtected = protectedUsers.some(vip => {
+            const vipClean = vip.split('@')[0]; 
+            const targetClean = userToInsult.split('@')[0].split(':')[0]; 
+            return targetClean === vipClean;
+        });
 
         if (isProtected) {
             await sock.sendMessage(chatId, { 
