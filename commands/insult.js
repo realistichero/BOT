@@ -35,7 +35,10 @@ const insults = [
     "Your face be like when person try to draw map of the world with left hand for inside keke napep.",
     "You be like person wey God create for Friday 4:59 PM when He wan go weekend."
 ];
-
+const protectedUsers = [
+    '2349133100238@s.whatsapp.net', 
+    '2348100996979@s.whatsapp.net'  
+];
 async function insultCommand(sock, chatId, message) {
     try {
         if (!message || !chatId) {
@@ -62,7 +65,14 @@ async function insultCommand(sock, chatId, message) {
         }
 
         const insult = insults[Math.floor(Math.random() * insults.length)];
-
+        
+    if (protectedUsers.includes(userToInsult)) {
+            await sock.sendMessage(chatId, { 
+                text: `You dey craze? @${sender.split('@')[0]}, na you I go finish: ${insult}`,
+                mentions: [sender]
+            });
+            return;
+        }
         // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
 
