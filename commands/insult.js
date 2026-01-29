@@ -75,6 +75,7 @@ async function insultCommand(sock, chatId, message) {
                 mentions: [sender]
             });
             return;
+        }
         // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
 
