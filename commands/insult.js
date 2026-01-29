@@ -47,7 +47,8 @@ async function insultCommand(sock, chatId, message) {
         }
 
         let userToInsult;
-        
+
+        const sender = message.key.participant || message.key.remoteJid;
         // Check for mentioned users
         if (message.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
             userToInsult = message.message.extendedTextMessage.contextInfo.mentionedJid[0];
@@ -65,14 +66,15 @@ async function insultCommand(sock, chatId, message) {
         }
 
         const insult = insults[Math.floor(Math.random() * insults.length)];
-        
-    if (protectedUsers.includes(userToInsult)) {
+        // protected
+    const isProtected = protectedUsers.some(id => userToInsult.split('@')[0] === id.split('@')[0]);
+
+        if (isProtected) {
             await sock.sendMessage(chatId, { 
                 text: `You dey craze? @${sender.split('@')[0]}, na you I go finish: ${insult}`,
                 mentions: [sender]
             });
             return;
-        }
         // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
 
