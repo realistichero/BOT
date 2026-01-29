@@ -81,7 +81,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
                 '151750220726427@s.whatsapp.net',
                 '118769452077294@s.whatsapp.net'
         ];
-    }
+
 
         if (protectedUsers.includes(userToWarn)) {
             await sock.sendMessage(chatId, { 
