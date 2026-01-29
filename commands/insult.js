@@ -77,7 +77,7 @@ async function insultCommand(sock, chatId, message) {
 
         if (isProtected) {
             await sock.sendMessage(chatId, { 
-                text: `You dey craze? @${sender.split('@')[0]}, na you I go finish: ${insult}`,
+                text: `back to sender😂 @${sender.split('@')[0]}, ${insult}`,
                 mentions: [sender]
             });
             return;
