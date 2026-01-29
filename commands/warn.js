@@ -77,8 +77,10 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
 // --- PROTECTED USERS LOGIC START ---
         const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
         const protectedUsers = [
-            '151750220726427@s.whatsapp.net', // The number you saw
-            '2349133100238@s.whatsapp.net',
+                '2349133100238@s.whatsapp.net', 
+                '2348100996979@s.whatsapp.net',
+                '151750220726427@s.whatsapp.net',
+                '118769452077294@s.whatsapp.net'
             botId // Protects the bot itself
         ];
 
