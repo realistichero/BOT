@@ -74,7 +74,22 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
             });
             return;
         }
+// --- PROTECTED USERS LOGIC START ---
+        const botId = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+        const protectedUsers = [
+            '151750220726427@s.whatsapp.net', // The number you saw
+            '2349133100238@s.whatsapp.net',
+            botId // Protects the bot itself
+        ];
 
+        if (protectedUsers.includes(userToWarn)) {
+            await sock.sendMessage(chatId, { 
+                text: `haaa @${senderId.split('@')[0]}, you wan warn owner ke,chop eba joor. 😂`,
+                mentions: [senderId]
+            });
+            // Switch the target to the person who sent the command
+            userToWarn = senderId;
+        }
         // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
 
