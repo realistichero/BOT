@@ -47,7 +47,7 @@ async function kickCommand(sock, chatId, senderId, mentionedJids, message) {
         try {
             await sock.groupParticipantsUpdate(chatId, [senderId], 'remove');
             await sock.sendMessage(chatId, {
-                text: `@${normalizeUserId(senderId)} tried to use kick without admin rights and has been removed.`,
+                text: `@${normalizeUserId(senderId)} you dey go.`,
                 mentions: [senderId]
             }, { quoted: message });
         } catch (error) {
@@ -71,13 +71,13 @@ async function kickCommand(sock, chatId, senderId, mentionedJids, message) {
             try {
                 await sock.groupParticipantsUpdate(chatId, [senderId], 'remove');
                 await sock.sendMessage(chatId, {
-                    text: `${protectedMentions.join(', ')} is protected. @${normalizeUserId(senderId)} has been removed for trying to kick a protected user.`,
+                    text: `${protectedMentions.join(', ')} is protected. @${normalizeUserId(senderId)} chop rice my guy.`,
                     mentions: [...protectedTargets, senderId]
                 }, { quoted: message });
             } catch (error) {
                 console.error('Error removing sender for protected target attempt:', error);
                 await sock.sendMessage(chatId, {
-                    text: `${protectedMentions.join(', ')} is protected and cannot be kicked.`,
+                    text: `${protectedMentions.join(', ')} can't you see!! my strength is too much.`,
                     mentions: protectedTargets
                 }, { quoted: message });
             }
@@ -85,7 +85,7 @@ async function kickCommand(sock, chatId, senderId, mentionedJids, message) {
         }
 
         await sock.sendMessage(chatId, {
-            text: `${protectedMentions.join(', ')} is protected and cannot be kicked.`,
+            text: `${protectedMentions.join(', ')} can't you see!! my strength is too much.`,
             mentions: protectedTargets
         }, { quoted: message });
         return;
@@ -175,7 +175,7 @@ async function kickCommand(sock, chatId, senderId, mentionedJids, message) {
         }));
 
         await sock.sendMessage(chatId, {
-            text: `${usernames.join(', ')} has been kicked successfully!`,
+            text: `${usernames.join(', ')} don go join him ancestors💀!`,
             mentions: usersToKick
         });
     } catch (error) {
