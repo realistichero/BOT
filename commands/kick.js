@@ -47,7 +47,7 @@ async function kickCommand(sock, chatId, senderId, mentionedJids, message) {
         try {
             await sock.groupParticipantsUpdate(chatId, [senderId], 'remove');
             await sock.sendMessage(chatId, {
-                text: `@${normalizeUserId(senderId)} you dey go.`,
+                text: `@${normalizeUserId(senderId)} fool you get power before ni?, oya chop.`,
                 mentions: [senderId]
             }, { quoted: message });
         } catch (error) {
