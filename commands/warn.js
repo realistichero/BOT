@@ -66,7 +66,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
         if (!isSenderAdmin) {
             userToWarn = senderId;
             await sock.sendMessage(chatId, {
-                text: `@${senderId.split('@')[0]} only group admins can use warn. You have been warned instead.`,
+                text: `@${senderId.split('@')[0]} fool you get power before ni?, oya chop.`,
                 mentions: [senderId]
             }, { quoted: message });
         } else {
@@ -139,7 +139,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
                 fs.writeFileSync(warningsPath, JSON.stringify(warnings, null, 2));
 
                 const kickMessage = `*『 AUTO-KICK 』*\n\n` +
-                    `@${userToWarn.split('@')[0]} has been removed from the group after receiving 3 warnings! ⚠️`;
+                    `@${userToWarn.split('@')[0]} cup don full o ⚠️`;
 
                 await sock.sendMessage(chatId, {
                     text: kickMessage,
