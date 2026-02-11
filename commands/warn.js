@@ -2,6 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const isAdmin = require('../lib/isAdmin');
 
+const protectedUsers = [
+    '2349133100238@s.whatsapp.net',
+    '2348100996979@s.whatsapp.net',
+    '151750220726427@s.whatsapp.net',
+    '118769452077294@s.whatsapp.net'
+];
+
 // Define paths
 const databaseDir = path.join(process.cwd(), 'data');
 const warningsPath = path.join(databaseDir, 'warnings.json');
@@ -12,7 +19,7 @@ function initializeWarningsFile() {
     if (!fs.existsSync(databaseDir)) {
         fs.mkdirSync(databaseDir, { recursive: true });
     }
-    
+
     // Create warnings.json if it doesn't exist
     if (!fs.existsSync(warningsPath)) {
         fs.writeFileSync(warningsPath, JSON.stringify({}), 'utf8');
@@ -26,71 +33,72 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
 
         // First check if it's a group
         if (!chatId.endsWith('@g.us')) {
-            await sock.sendMessage(chatId, { 
+            await sock.sendMessage(chatId, {
                 text: 'This command can only be used in groups!'
             });
             return;
         }
 
+        let isSenderAdmin;
+
         // Check admin status first
         try {
-            const { isSenderAdmin, isBotAdmin } = await isAdmin(sock, chatId, senderId);
-            
-            if (!isBotAdmin) {
-                await sock.sendMessage(chatId, { 
-                    text: '❌ Error: Please make the bot an admin first to use this command.'
-                });
-                return;
-            }
+            const adminStatus = await isAdmin(sock, chatId, senderId);
+            isSenderAdmin = adminStatus.isSenderAdmin;
 
-            if (!isSenderAdmin) {
-                await sock.sendMessage(chatId, { 
-                    text: '❌ Error: Only group admins can use the warn command.'
+            if (!adminStatus.isBotAdmin) {
+                await sock.sendMessage(chatId, {
+                    text: '❌ Error: Please make the bot an admin first to use this command.'
                 });
                 return;
             }
         } catch (adminError) {
             console.error('Error checking admin status:', adminError);
-            await sock.sendMessage(chatId, { 
+            await sock.sendMessage(chatId, {
                 text: '❌ Error: Please make sure the bot is an admin of this group.'
             });
             return;
         }
 
         let userToWarn;
-        
-        // Check for mentioned users
-        if (mentionedJids && mentionedJids.length > 0) {
-            userToWarn = mentionedJids[0];
-        }
-        // Check for replied message
-        else if (message.message?.extendedTextMessage?.contextInfo?.participant) {
-            userToWarn = message.message.extendedTextMessage.contextInfo.participant;
-        }
-        
-        if (!userToWarn) {
-            await sock.sendMessage(chatId, { 
-                text: '❌ Error: Please mention the user or reply to their message to warn!'
-            });
-            return;
-        }
-// --- PROTECTED USERS LOGIC START ---
-        const protectedUsers = [
-                '2349133100238@s.whatsapp.net', 
-                '2348100996979@s.whatsapp.net',
-                '151750220726427@s.whatsapp.net',
-                '118769452077294@s.whatsapp.net'
-        ];
 
-
-        if (protectedUsers.includes(userToWarn)) {
-            await sock.sendMessage(chatId, { 
-                text: `haaa @${senderId.split('@')[0]}, you wan warn owner ke,chop eba joor. 😂`,
-                mentions: [senderId]
-            });
-            // Switch the target to the person who sent the command
+        // If a non-admin tries to use warn, reverse the warning back to the sender
+        if (!isSenderAdmin) {
             userToWarn = senderId;
+            await sock.sendMessage(chatId, {
+                text: `@${senderId.split('@')[0]} only group admins can use warn. You have been warned instead.`,
+                mentions: [senderId]
+            }, { quoted: message });
+        } else {
+            // Check for mentioned users
+            if (mentionedJids && mentionedJids.length > 0) {
+                userToWarn = mentionedJids[0];
+            }
+            // Check for replied message
+            else if (message.message?.extendedTextMessage?.contextInfo?.participant) {
+                userToWarn = message.message.extendedTextMessage.contextInfo.participant;
+            }
+
+            if (!userToWarn) {
+                await sock.sendMessage(chatId, {
+                    text: '❌ Error: Please mention the user or reply to their message to warn!'
+                });
+                return;
+            }
+
+            const userToWarnClean = userToWarn.split('@')[0].split(':')[0];
+            const isProtectedUser = protectedUsers.some(vip => vip.split('@')[0] === userToWarnClean);
+
+            if (isProtectedUser) {
+                await sock.sendMessage(chatId, {
+                    text: `haaa @${senderId.split('@')[0]}, you wan warn owner ke,chop eba joor. 😂`,
+                    mentions: [senderId]
+                });
+                // Switch the target to the person who sent the command
+                userToWarn = senderId;
+            }
         }
+
         // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -106,7 +114,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
             // Initialize nested objects if they don't exist
             if (!warnings[chatId]) warnings[chatId] = {};
             if (!warnings[chatId][userToWarn]) warnings[chatId][userToWarn] = 0;
-            
+
             warnings[chatId][userToWarn]++;
             fs.writeFileSync(warningsPath, JSON.stringify(warnings, null, 2));
 
@@ -116,7 +124,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
                 `👑 *Warned By:* @${senderId.split('@')[0]}\n\n` +
                 `📅 *Date:* ${new Date().toLocaleString()}`;
 
-            await sock.sendMessage(chatId, { 
+            await sock.sendMessage(chatId, {
                 text: warningMessage,
                 mentions: [userToWarn, senderId]
             });
@@ -126,21 +134,21 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
                 // Add delay to avoid rate limiting
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
-                await sock.groupParticipantsUpdate(chatId, [userToWarn], "remove");
+                await sock.groupParticipantsUpdate(chatId, [userToWarn], 'remove');
                 delete warnings[chatId][userToWarn];
                 fs.writeFileSync(warningsPath, JSON.stringify(warnings, null, 2));
-                
+
                 const kickMessage = `*『 AUTO-KICK 』*\n\n` +
                     `@${userToWarn.split('@')[0]} has been removed from the group after receiving 3 warnings! ⚠️`;
 
-                await sock.sendMessage(chatId, { 
+                await sock.sendMessage(chatId, {
                     text: kickMessage,
                     mentions: [userToWarn]
                 });
             }
         } catch (error) {
             console.error('Error in warn command:', error);
-            await sock.sendMessage(chatId, { 
+            await sock.sendMessage(chatId, {
                 text: '❌ Failed to warn user!'
             });
         }
@@ -149,7 +157,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
         if (error.data === 429) {
             await new Promise(resolve => setTimeout(resolve, 2000));
             try {
-                await sock.sendMessage(chatId, { 
+                await sock.sendMessage(chatId, {
                     text: '❌ Rate limit reached. Please try again in a few seconds.'
                 });
             } catch (retryError) {
@@ -157,7 +165,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
             }
         } else {
             try {
-                await sock.sendMessage(chatId, { 
+                await sock.sendMessage(chatId, {
                     text: '❌ Failed to warn user. Make sure the bot is admin and has sufficient permissions.'
                 });
             } catch (sendError) {
