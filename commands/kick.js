@@ -1,5 +1,12 @@
 const isAdmin = require('../lib/isAdmin');
 
+const protectedUsers = [
+    '2349133100238@s.whatsapp.net',
+    '2348100996979@s.whatsapp.net',
+    '151750220726427@s.whatsapp.net',
+    '118769452077294@s.whatsapp.net'
+];
+
 async function kickCommand(sock, chatId, senderId, mentionedJids, message) {
     const isOwner = message.key.fromMe;
     if (!isOwner) {
@@ -28,6 +35,20 @@ async function kickCommand(sock, chatId, senderId, mentionedJids, message) {
     if (usersToKick.length === 0) {
         await sock.sendMessage(chatId, { 
             text: 'Please mention the user or reply to their message to kick!'
+        }, { quoted: message });
+        return;
+    }
+
+    const protectedTargets = usersToKick.filter(userId => {
+        const targetClean = userId.split('@')[0].split(':')[0];
+        return protectedUsers.some(vip => vip.split('@')[0] === targetClean);
+    });
+
+    if (protectedTargets.length > 0) {
+        const protectedMentions = protectedTargets.map(userId => `@${userId.split('@')[0].split(':')[0]}`);
+        await sock.sendMessage(chatId, {
+            text: `${protectedMentions.join(', ')} is protected and cannot be kicked.`,
+            mentions: protectedTargets
         }, { quoted: message });
         return;
     }
