@@ -38,7 +38,9 @@ const insults = [
 const protectedUsers = [
     '2349133100238@s.whatsapp.net', 
     '2348100996979@s.whatsapp.net',
+    '2348129806136@s.whatsapp.net',
     '151750220726427@s.whatsapp.net',
+    '221255710068799@s.whatsapp.net',
     '118769452077294@s.whatsapp.net'
 ];
 async function insultCommand(sock, chatId, message) {
