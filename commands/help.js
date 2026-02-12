@@ -48,6 +48,7 @@ async function helpCommand(sock, chatId, message) {
 ║ ➤ .kick @user
 ║ ➤ .warnings @user
 ║ ➤ .warn @user
+║ ➤ .resetwarn @user
 ║ ➤ .antilink
 ║ ➤ .antibadword
 ║ ➤ .clear
