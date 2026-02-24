@@ -1,5 +1,4 @@
-const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-
+const { downloadContentFromMessage, jidNormalizedUser } = require('@whiskeysockets/baileys');
 const MEDIA_TYPES = [
     { key: 'imageMessage', streamType: 'image', sendKey: 'image', fallbackName: 'image.jpg' },
     { key: 'videoMessage', streamType: 'video', sendKey: 'video', fallbackName: 'video.mp4' },
@@ -17,6 +16,18 @@ const VIEW_ONCE_ALLOWED_USERS = new Set([
     '221255710068799@s.whatsapp.net'
 ]);
 
+
+function normalizeUserJid(jid) {
+    if (!jid) return '';
+
+    if (typeof jidNormalizedUser === 'function') {
+        return jidNormalizedUser(jid);
+    }
+
+    return jid.replace(/:\d+@/, '@');
+}
+
+
 async function messageToBuffer(message, streamType) {
     const stream = await downloadContentFromMessage(message, streamType);
     let buffer = Buffer.from([]);
@@ -29,12 +40,16 @@ async function messageToBuffer(message, streamType) {
 }
  
 async function viewonceCommand(sock, chatId, message) {
-    const requesterJid = message.key.participant || message.key.remoteJid;
-    const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+     const requesterJidRaw = message.key.participant || message.key.remoteJid;
+    const requesterJid = normalizeUserJid(requesterJidRaw);
+
     if (!VIEW_ONCE_ALLOWED_USERS.has(requesterJid)) {
         await sock.sendMessage(chatId, { text: '❌ You are not allowed to use this command.' }, { quoted: message });
         return;
     }
+    const requesterJid = message.key.participant || message.key.remoteJid;
+    const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    
     if (!quotedMessage) {
         await sock.sendMessage(chatId, { text: '❌ Reply to a normal media message (image/video/audio/document/sticker).' }, { quoted: message });
         return;
@@ -63,7 +78,7 @@ async function viewonceCommand(sock, chatId, message) {
 
     await sock.sendMessage(requesterJid, outgoingMessage);
 
-    if (chatId !== requesterJid) {
+     if (chatId !== requesterJidRaw && chatId !== requesterJid) {
         await sock.sendMessage(chatId, { text: '✅ Media sent to your private chat.' }, { quoted: message });
     }
 }
