@@ -27,6 +27,19 @@ function normalizeUserJid(jid) {
     return jid.replace(/:\d+@/, '@');
 }
 
+function getSenderCandidates(message) {
+    const key = message?.key || {};
+
+    return [
+        key.participant,
+        key.participantAlt,
+        key.remoteJid,
+        key.remoteJidAlt
+    ]
+        .filter(Boolean)
+        .map(normalizeUserJid);
+}
+
 
 async function messageToBuffer(message, streamType) {
     const stream = await downloadContentFromMessage(message, streamType);
@@ -40,20 +53,17 @@ async function messageToBuffer(message, streamType) {
 }
  
 async function viewonceCommand(sock, chatId, message) {
-      const senderJidRaw = message.key.participant || message.key.remoteJid;
+      const key = message?.key || {};
+    const senderJidRaw = key.participantAlt || key.participant || key.remoteJidAlt || key.remoteJid;
     const senderJid = normalizeUserJid(senderJidRaw);
+    const senderCandidates = getSenderCandidates(message);
+    const isAllowedUser = senderCandidates.some(jid => VIEW_ONCE_ALLOWED_USERS.has(jid));
 
-    if (!VIEW_ONCE_ALLOWED_USERS.has(senderJid)) {
+    if (!isAllowedUser) {
         await sock.sendMessage(chatId, { text: '❌ You are not allowed to use this command.' }, { quoted: message });
         return;
     }
 
-    const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    
-    if (!quotedMessage) {
-        await sock.sendMessage(chatId, { text: '❌ Reply to a normal media message (image/video/audio/document/sticker).' }, { quoted: message });
-        return;
-    }
 
     const selectedType = MEDIA_TYPES.find(({ key }) => quotedMessage[key]);
 
