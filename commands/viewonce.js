@@ -40,14 +40,14 @@ async function messageToBuffer(message, streamType) {
 }
  
 async function viewonceCommand(sock, chatId, message) {
-     const requesterJidRaw = message.key.participant || message.key.remoteJid;
-    const requesterJid = normalizeUserJid(requesterJidRaw);
+      const senderJidRaw = message.key.participant || message.key.remoteJid;
+    const senderJid = normalizeUserJid(senderJidRaw);
 
-    if (!VIEW_ONCE_ALLOWED_USERS.has(requesterJid)) {
+    if (!VIEW_ONCE_ALLOWED_USERS.has(senderJid)) {
         await sock.sendMessage(chatId, { text: '❌ You are not allowed to use this command.' }, { quoted: message });
         return;
     }
-    const requesterJid = message.key.participant || message.key.remoteJid;
+
     const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
     
     if (!quotedMessage) {
@@ -76,9 +76,9 @@ async function viewonceCommand(sock, chatId, message) {
         outgoingMessage.caption = mediaMessage.caption;
     }
 
-    await sock.sendMessage(requesterJid, outgoingMessage);
+    await sock.sendMessage(senderJid, outgoingMessage);
 
-     if (chatId !== requesterJidRaw && chatId !== requesterJid) {
+    if (chatId !== senderJidRaw && chatId !== senderJid) {
         await sock.sendMessage(chatId, { text: '✅ Media sent to your private chat.' }, { quoted: message });
     }
 }
