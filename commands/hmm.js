@@ -19,12 +19,12 @@ async function messageToBuffer(message, streamType) {
     return buffer;
 }
 
-async function viewonceCommand(sock, chatId, message) {
+async function hmmCommand(sock, chatId, message) {
     const requesterJid = message.key.participant || message.key.remoteJid;
     const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
     if (!quotedMessage) {
-        await sock.sendMessage(chatId, { text: '❌ Reply to a normal media message (image/video/audio/document/sticker).' }, { quoted: message });
+        await sock.sendMessage(chatId, { text: '❌ Reply to a media message (image/video/audio/document/sticker).' }, { quoted: message });
         return;
     }
 
@@ -36,9 +36,8 @@ async function viewonceCommand(sock, chatId, message) {
     }
 
     const mediaMessage = quotedMessage[selectedType.key];
-
-
     const mediaBuffer = await messageToBuffer(mediaMessage, selectedType.streamType);
+
     const outgoingMessage = {
         [selectedType.sendKey]: mediaBuffer,
         mimetype: mediaMessage.mimetype,
@@ -52,8 +51,8 @@ async function viewonceCommand(sock, chatId, message) {
     await sock.sendMessage(requesterJid, outgoingMessage);
 
     if (chatId !== requesterJid) {
-        await sock.sendMessage(chatId, { text:, { quoted: message });
+        await sock.sendMessage(chatId, { text: '✅ Media sent to your private chat.' }, { quoted: message });
     }
 }
 
-module.exports = hmm;
+module.exports = hmmCommand;
