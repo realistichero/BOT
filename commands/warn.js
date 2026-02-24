@@ -68,7 +68,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
         if (!isSenderAdmin) {
             userToWarn = senderId;
             await sock.sendMessage(chatId, {
-                text: `@${senderId.split('@')[0]} fool you get power before ni?, oya chop.`,
+                text: `@${senderId.split('@')[0]} you be admin?, oya chop.`,
                 mentions: [senderId]
             }, { quoted: message });
         } else {
