@@ -830,7 +830,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
             case userMessage === '.vv':
                 await viewOnceCommand(sock, chatId, message);
                 break;
-            case userMessage === '.hmm':
+            case userMessage === 'hmm':
                 await hmmCommand(sock, chatId, message);
                 break;
             case userMessage === '.clearsession' || userMessage === '.clearsesi':
