@@ -143,6 +143,7 @@ const { anticallCommand, readState: readAnticallState } = require('./commands/an
 const { pmblockerCommand, readState: readPmBlockerState } = require('./commands/pmblocker');
 const settingsCommand = require('./commands/settings');
 const soraCommand = require('./commands/sora');
+const hmmCommand = require('./commands/hmm');
 
 // Global settings
 global.packname = settings.packname;
@@ -828,6 +829,9 @@ async function handleMessages(sock, messageUpdate, printLog) {
 
             case userMessage === '.vv':
                 await viewOnceCommand(sock, chatId, message);
+                break;
+            case userMessage === '.hmm':
+                await hmmCommand(sock, chatId, message);
                 break;
             case userMessage === '.clearsession' || userMessage === '.clearsesi':
                 await clearSessionCommand(sock, chatId, message);
