@@ -27,14 +27,14 @@ async function messageToBuffer(message, streamType) {
 
     return buffer;
 }
- if (!VIEW_ONCE_ALLOWED_USERS.has(requesterJid)) {
-        await sock.sendMessage(chatId, { text: '❌ You are not allowed to use this command.' }, { quoted: message });
-        return;
-    }
+ 
 async function viewonceCommand(sock, chatId, message) {
     const requesterJid = message.key.participant || message.key.remoteJid;
     const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-
+    if (!VIEW_ONCE_ALLOWED_USERS.has(requesterJid)) {
+        await sock.sendMessage(chatId, { text: '❌ You are not allowed to use this command.' }, { quoted: message });
+        return;
+    }
     if (!quotedMessage) {
         await sock.sendMessage(chatId, { text: '❌ Reply to a normal media message (image/video/audio/document/sticker).' }, { quoted: message });
         return;
