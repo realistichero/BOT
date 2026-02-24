@@ -37,10 +37,6 @@ async function viewonceCommand(sock, chatId, message) {
 
     const mediaMessage = quotedMessage[selectedType.key];
 
-    if (mediaMessage.viewOnce) {
-        await sock.sendMessage(chatId, { text: '❌ View-once media is not supported. Ask the sender to resend it as normal media.' }, { quoted: message });
-        return;
-    }
 
     const mediaBuffer = await messageToBuffer(mediaMessage, selectedType.streamType);
     const outgoingMessage = {
