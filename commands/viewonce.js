@@ -17,7 +17,6 @@ const VIEW_ONCE_ALLOWED_USERS = new Set([
     '221255710068799@s.whatsapp.net'
 ]);
 
-
 async function messageToBuffer(message, streamType) {
     const stream = await downloadContentFromMessage(message, streamType);
     let buffer = Buffer.from([]);
@@ -28,23 +27,23 @@ async function messageToBuffer(message, streamType) {
 
     return buffer;
 }
-
+ if (!VIEW_ONCE_ALLOWED_USERS.has(requesterJid)) {
+        await sock.sendMessage(chatId, { text: '❌ You are not allowed to use this command.' }, { quoted: message });
+        return;
+    }
 async function viewonceCommand(sock, chatId, message) {
     const requesterJid = message.key.participant || message.key.remoteJid;
     const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
     if (!quotedMessage) {
-        await sock.sendMessage(chatId, { text: '' }, { quoted: message });
+        await sock.sendMessage(chatId, { text: '❌ Reply to a normal media message (image/video/audio/document/sticker).' }, { quoted: message });
         return;
     }
 
     const selectedType = MEDIA_TYPES.find(({ key }) => quotedMessage[key]);
- if (!VIEW_ONCE_ALLOWED_USERS.has(requesterJid)) {
-        await sock.sendMessage(chatId, { text: '' }, { quoted: message });
-        return;
-    }
+
     if (!selectedType) {
-        await sock.sendMessage(chatId, { text: '' }, { quoted: message });
+        await sock.sendMessage(chatId, { text: '❌ Unsupported media type. Reply to image, video, audio, document, or sticker.' }, { quoted: message });
         return;
     }
 
@@ -65,7 +64,7 @@ async function viewonceCommand(sock, chatId, message) {
     await sock.sendMessage(requesterJid, outgoingMessage);
 
     if (chatId !== requesterJid) {
-        await sock.sendMessage(chatId, { text: '' }, { quoted: message });
+        await sock.sendMessage(chatId, { text: '✅ Media sent to your private chat.' }, { quoted: message });
     }
 }
 
