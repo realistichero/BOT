@@ -5,6 +5,12 @@ const isAdmin = require('../lib/isAdmin');
 const databaseDir = path.join(process.cwd(), 'data');
 const warningsPath = path.join(databaseDir, 'warnings.json');
 
+function normalizeJid(jid = '') {
+    const [userPart, domainPart = ''] = jid.split('@');
+    const cleanUserPart = userPart.split(':')[0];
+    return `${cleanUserPart}@${domainPart}`;
+}
+
 function initializeWarningsFile() {
     if (!fs.existsSync(databaseDir)) {
         fs.mkdirSync(databaseDir, { recursive: true });
@@ -57,6 +63,12 @@ async function resetWarnCommand(sock, chatId, senderId, mentionedJids, message) 
             return;
         }
 
+        if (normalizeJid(userToReset) === normalizeJid(senderId)) {
+            await sock.sendMessage(chatId, {
+                text: 'The boy wan be superstar😂😂😂.'
+            }, { quoted: message });
+            return;
+        }
         let warnings = {};
         try {
             warnings = JSON.parse(fs.readFileSync(warningsPath, 'utf8'));
