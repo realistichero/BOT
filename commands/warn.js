@@ -16,21 +16,25 @@ const databaseDir = path.join(process.cwd(), 'data');
 const warningsPath = path.join(databaseDir, 'warnings.json');
 const warnUsagePath = path.join(databaseDir, 'warnUsage.json');
 
-// Initialize warnings file if it doesn't exist
 function initializeWarningsFile() {
-    // Create database directory if it doesn't exist
     if (!fs.existsSync(databaseDir)) {
         fs.mkdirSync(databaseDir, { recursive: true });
     }
 
-    // Create warnings.json if it doesn't exist
     if (!fs.existsSync(warningsPath)) {
         fs.writeFileSync(warningsPath, JSON.stringify({}), 'utf8');
     }
 
-    // Create warnUsage.json if it doesn't exist
     if (!fs.existsSync(warnUsagePath)) {
         fs.writeFileSync(warnUsagePath, JSON.stringify({}), 'utf8');
+    }
+}
+
+function readJsonSafe(filePath) {
+    try {
+        return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    } catch (error) {
+        return {};
     }
 }
 
@@ -40,10 +44,8 @@ function getDailyUsageKey(date = new Date()) {
 
 async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
     try {
-        // Initialize files first
         initializeWarningsFile();
 
-        // First check if it's a group
         if (!chatId.endsWith('@g.us')) {
             await sock.sendMessage(chatId, {
                 text: 'This command can only be used in groups!'
@@ -53,7 +55,6 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
 
         let isSenderAdmin;
 
-        // Check admin status first
         try {
             const adminStatus = await isAdmin(sock, chatId, senderId);
             isSenderAdmin = adminStatus.isSenderAdmin;
@@ -73,8 +74,10 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
         }
 
         let userToWarn;
+        const today = getDailyUsageKey();
+        let dailyCount = 0;
+        let warnUsage = {};
 
-        // If a non-admin tries to use warn, reverse the warning back to the sender
         if (!isSenderAdmin) {
             userToWarn = senderId;
             await sock.sendMessage(chatId, {
@@ -82,40 +85,30 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
                 mentions: [senderId]
             }, { quoted: message });
         } else {
-            const today = getDailyUsageKey();
-            let warnUsage = {};
-
-            try {
-                warnUsage = JSON.parse(fs.readFileSync(warnUsagePath, 'utf8'));
-            } catch (error) {
-                warnUsage = {};
-            }
+            warnUsage = readJsonSafe(warnUsagePath);
 
             if (!warnUsage[chatId]) warnUsage[chatId] = {};
             if (!warnUsage[chatId][senderId]) warnUsage[chatId][senderId] = {};
 
-            const dailyCount = warnUsage[chatId][senderId][today] || 0;
+            dailyCount = warnUsage[chatId][senderId][today] || 0;
 
             if (dailyCount >= 2) {
                 await sock.sendMessage(chatId, {
-                    text: `⚠️ @${senderId.split('@')[0]}, omo you wicked o, you sef chop small and rest.`,
+                    text: `⚠️ @${senderId.split('@')[0]}, you don use warn command 2 times today. Try again tomorrow.`,
                     mentions: [senderId]
                 }, { quoted: message });
                 return;
             }
 
-            // Check for mentioned users
             if (mentionedJids && mentionedJids.length > 0) {
                 userToWarn = mentionedJids[0];
-            }
-            // Check for replied message
-            else if (message.message?.extendedTextMessage?.contextInfo?.participant) {
+            } else if (message.message?.extendedTextMessage?.contextInfo?.participant) {
                 userToWarn = message.message.extendedTextMessage.contextInfo.participant;
             }
 
             if (!userToWarn) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ Error: Oga tag who you wan warn!'
+                    text: '❌ Error: Please mention the user or reply to their message to warn!'
                 });
                 return;
             }
@@ -128,34 +121,79 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
                     text: `haaa @${senderId.split('@')[0]}, you wan warn owner ke,chop eba joor. 😂`,
                     mentions: [senderId]
                 });
-                // Switch the target to the person who sent the command
                 userToWarn = senderId;
             }
-
-            warnUsage[chatId][senderId][today] = dailyCount + 1;
-            fs.writeFileSync(warnUsagePath, JSON.stringify(warnUsage, null, 2));
         }
 
-        // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         try {
-            // Read warnings, create empty object if file is empty
-            let warnings = {};
-            try {
-                warnings = JSON.parse(fs.readFileSync(warningsPath, 'utf8'));
-            } catch (error) {
-                warnings = {};
-            }
+            const warnings = readJsonSafe(warningsPath);
 
-            // Initialize nested objects if they don't exist
             if (!warnings[chatId]) warnings[chatId] = {};
             if (!warnings[chatId][userToWarn]) warnings[chatId][userToWarn] = 0;
 
             warnings[chatId][userToWarn]++;
             fs.writeFileSync(warningsPath, JSON.stringify(warnings, null, 2));
 
-            const warningMessage = `*『 WARNING ALERT 』*\n\n` +
-                `👤 *Warned User:* @${userToWarn.split('@')[0]}\n` +
-                `⚠️ *Warning Count:* ${warnings[chatId][userToWarn]}/3\n` +
-                `👑 *Warned By:* @${senderId.split('@')[0]}\n\n` +
+            if (isSenderAdmin) {
+                warnUsage[chatId][senderId][today] = dailyCount + 1;
+                fs.writeFileSync(warnUsagePath, JSON.stringify(warnUsage, null, 2));
+            }
+
+            const warningMessage = `*『 WARNING ALERT 』*\n\n`
+                + `👤 *Warned User:* @${userToWarn.split('@')[0]}\n`
+                + `⚠️ *Warning Count:* ${warnings[chatId][userToWarn]}/3\n`
+                + `👑 *Warned By:* @${senderId.split('@')[0]}\n\n`
+                + `📅 *Date:* ${new Date().toLocaleString()}`;
+
+            await sock.sendMessage(chatId, {
+                text: warningMessage,
+                mentions: [userToWarn, senderId]
+            });
+
+            if (warnings[chatId][userToWarn] >= 3) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                await sock.groupParticipantsUpdate(chatId, [userToWarn], 'remove');
+                delete warnings[chatId][userToWarn];
+                fs.writeFileSync(warningsPath, JSON.stringify(warnings, null, 2));
+
+                const kickMessage = `*『 AUTO-KICK 』*\n\n@${userToWarn.split('@')[0]} cup don full o ⚠️`;
+
+
+                await sock.sendMessage(chatId, {
+                    text: kickMessage,
+                    mentions: [userToWarn]
+                });
+            }
+        } catch (error) {
+            console.error('Error in warn command:', error);
+            await sock.sendMessage(chatId, {
+                text: '❌ Failed to warn user!'
+            });
+        }
+    } catch (error) {
+        console.error('Error in warn command:', error);
+        if (error.data === 429) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            try {
+                await sock.sendMessage(chatId, {
+                    text: '❌ Rate limit reached. Please try again in a few seconds.'
+                });
+            } catch (retryError) {
+                console.error('Error sending retry message:', retryError);
+            }
+        } else {
+            try {
+                await sock.sendMessage(chatId, {
+                    text: '❌ Failed to warn user. Make sure the bot is admin and has sufficient permissions.'
+                });
+            } catch (sendError) {
+                console.error('Error sending error message:', sendError);
+            }
+        }
+    }
+}
+
+module.exports = warnCommand;
