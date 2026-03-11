@@ -14,6 +14,7 @@ const protectedUsers = [
 // Define paths
 const databaseDir = path.join(process.cwd(), 'data');
 const warningsPath = path.join(databaseDir, 'warnings.json');
+const warnUsagePath = path.join(databaseDir, 'warnUsage.json');
 
 // Initialize warnings file if it doesn't exist
 function initializeWarningsFile() {
@@ -26,6 +27,15 @@ function initializeWarningsFile() {
     if (!fs.existsSync(warningsPath)) {
         fs.writeFileSync(warningsPath, JSON.stringify({}), 'utf8');
     }
+
+    // Create warnUsage.json if it doesn't exist
+    if (!fs.existsSync(warnUsagePath)) {
+        fs.writeFileSync(warnUsagePath, JSON.stringify({}), 'utf8');
+    }
+}
+
+function getDailyUsageKey(date = new Date()) {
+    return date.toISOString().split('T')[0];
 }
 
 async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
@@ -72,6 +82,28 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
                 mentions: [senderId]
             }, { quoted: message });
         } else {
+            const today = getDailyUsageKey();
+            let warnUsage = {};
+
+            try {
+                warnUsage = JSON.parse(fs.readFileSync(warnUsagePath, 'utf8'));
+            } catch (error) {
+                warnUsage = {};
+            }
+
+            if (!warnUsage[chatId]) warnUsage[chatId] = {};
+            if (!warnUsage[chatId][senderId]) warnUsage[chatId][senderId] = {};
+
+            const dailyCount = warnUsage[chatId][senderId][today] || 0;
+
+            if (dailyCount >= 2) {
+                await sock.sendMessage(chatId, {
+                    text: `⚠️ @${senderId.split('@')[0]}, omo you wicked o, you sef chop small and rest.`,
+                    mentions: [senderId]
+                }, { quoted: message });
+                return;
+            }
+
             // Check for mentioned users
             if (mentionedJids && mentionedJids.length > 0) {
                 userToWarn = mentionedJids[0];
@@ -83,7 +115,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
 
             if (!userToWarn) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ Error: Please mention the user or reply to their message to warn!'
+                    text: '❌ Error: Oga tag who you wan warn!'
                 });
                 return;
             }
@@ -99,6 +131,9 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
                 // Switch the target to the person who sent the command
                 userToWarn = senderId;
             }
+
+            warnUsage[chatId][senderId][today] = dailyCount + 1;
+            fs.writeFileSync(warnUsagePath, JSON.stringify(warnUsage, null, 2));
         }
 
         // Add delay to avoid rate limiting
@@ -124,57 +159,3 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
                 `👤 *Warned User:* @${userToWarn.split('@')[0]}\n` +
                 `⚠️ *Warning Count:* ${warnings[chatId][userToWarn]}/3\n` +
                 `👑 *Warned By:* @${senderId.split('@')[0]}\n\n` +
-                `📅 *Date:* ${new Date().toLocaleString()}`;
-
-            await sock.sendMessage(chatId, {
-                text: warningMessage,
-                mentions: [userToWarn, senderId]
-            });
-
-            // Auto-kick after 3 warnings
-            if (warnings[chatId][userToWarn] >= 3) {
-                // Add delay to avoid rate limiting
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                await sock.groupParticipantsUpdate(chatId, [userToWarn], 'remove');
-                delete warnings[chatId][userToWarn];
-                fs.writeFileSync(warningsPath, JSON.stringify(warnings, null, 2));
-
-                const kickMessage = `*『 AUTO-KICK 』*\n\n` +
-                    `@${userToWarn.split('@')[0]} cup don full o ⚠️`;
-
-                await sock.sendMessage(chatId, {
-                    text: kickMessage,
-                    mentions: [userToWarn]
-                });
-            }
-        } catch (error) {
-            console.error('Error in warn command:', error);
-            await sock.sendMessage(chatId, {
-                text: '❌ Failed to warn user!'
-            });
-        }
-    } catch (error) {
-        console.error('Error in warn command:', error);
-        if (error.data === 429) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            try {
-                await sock.sendMessage(chatId, {
-                    text: '❌ Rate limit reached. Please try again in a few seconds.'
-                });
-            } catch (retryError) {
-                console.error('Error sending retry message:', retryError);
-            }
-        } else {
-            try {
-                await sock.sendMessage(chatId, {
-                    text: '❌ Failed to warn user. Make sure the bot is admin and has sufficient permissions.'
-                });
-            } catch (sendError) {
-                console.error('Error sending error message:', sendError);
-            }
-        }
-    }
-}
-
-module.exports = warnCommand;
