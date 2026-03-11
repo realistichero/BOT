@@ -69,6 +69,7 @@ async function resetWarnCommand(sock, chatId, senderId, mentionedJids, message) 
             }, { quoted: message });
             return;
         }
+
         let warnings = {};
         try {
             warnings = JSON.parse(fs.readFileSync(warningsPath, 'utf8'));
