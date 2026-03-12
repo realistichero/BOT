@@ -84,7 +84,7 @@ async function resetWarnCommand(sock, chatId, senderId, mentionedJids, message) 
         fs.writeFileSync(warningsPath, JSON.stringify(warnings, null, 2));
 
         await sock.sendMessage(chatId, {
-            text: 'Go and sin no more @${userToReset.split('@')[0]}\nPrevious warnings: ${previousCount}`,
+            text: `Go and sin no more @${userToReset.split('@')[0]}\nPrevious warnings: ${previousCount}`, 
             mentions: [userToReset]
         }, { quoted: message });
     } catch (error) {
