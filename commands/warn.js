@@ -94,7 +94,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
 
             if (dailyCount >= 2) {
                 await sock.sendMessage(chatId, {
-                    text: `⚠️ @${senderId.split('@')[0]}, you don use warn command 2 times today. Try again tomorrow.`,
+                    text: `⚠️ @${senderId.split('@')[0]}, Oga try rest, u don reach limit for today .`,
                     mentions: [senderId]
                 }, { quoted: message });
                 return;
@@ -108,7 +108,7 @@ async function warnCommand(sock, chatId, senderId, mentionedJids, message) {
 
             if (!userToWarn) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ Error: Please mention the user or reply to their message to warn!'
+                    text: 'use your @ joor, abi you dey fear ni'
                 });
                 return;
             }
