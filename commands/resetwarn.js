@@ -45,7 +45,7 @@ async function resetWarnCommand(sock, chatId, senderId, mentionedJids, message) 
         }
 
         if (!adminStatus.isSenderAdmin) {
-            await sock.sendMessage(chatId, { text: '❌ Only group admins can reset warnings.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: 'who give you power ni?' }, { quoted: message });
             return;
         }
 
@@ -58,7 +58,7 @@ async function resetWarnCommand(sock, chatId, senderId, mentionedJids, message) 
 
         if (!userToReset) {
             await sock.sendMessage(chatId, {
-                text: '❌ Please mention the user or reply to their message to reset warnings.'
+                text: 'una no sabi read instruction ni.'
             }, { quoted: message });
             return;
         }
@@ -84,7 +84,7 @@ async function resetWarnCommand(sock, chatId, senderId, mentionedJids, message) 
         fs.writeFileSync(warningsPath, JSON.stringify(warnings, null, 2));
 
         await sock.sendMessage(chatId, {
-            text: `✅ Warning count reset for @${userToReset.split('@')[0]}\nPrevious warnings: ${previousCount}`,
+            text: `✅ Go and sin no more @${userToReset.split('@')[0]}`,
             mentions: [userToReset]
         }, { quoted: message });
     } catch (error) {
