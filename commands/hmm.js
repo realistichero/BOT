@@ -24,14 +24,14 @@ async function hmmCommand(sock, chatId, message) {
     const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
     if (!quotedMessage) {
-        await sock.sendMessage(chatId, { text: '❌ Reply to a media message (image/video/audio/document/sticker).' }, { quoted: message });
+        await sock.sendMessage(requesterJid, { text: '❌ Reply to a media message (image/video/audio/document/sticker).' }, { quoted: message });
         return;
     }
 
     const selectedType = MEDIA_TYPES.find(({ key }) => quotedMessage[key]);
 
     if (!selectedType) {
-        await sock.sendMessage(chatId, { text: '❌ Unsupported media type. Reply to image, video, audio, document, or sticker.' }, { quoted: message });
+        await sock.sendMessage(requesterJid, { text: '❌ Unsupported media type. Reply to image, video, audio, document, or sticker.' }, { quoted: message });
         return;
     }
 
