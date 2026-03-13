@@ -50,9 +50,6 @@ async function hmmCommand(sock, chatId, message) {
 
     await sock.sendMessage(requesterJid, outgoingMessage);
 
-    if (chatId !== requesterJid) {
-        await sock.sendMessage(chatId, { text: '✅ Media sent to your private chat.' }, { quoted: message });
-    }
 }
 
 module.exports = hmmCommand;
